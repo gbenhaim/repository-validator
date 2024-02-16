@@ -25,6 +25,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	pacv1alpha1 "github.com/openshift-pipelines/pipelines-as-code/pkg/apis/pipelinesascode/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -69,6 +70,11 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	if err := pacv1alpha1.AddToScheme(scheme); err != nil {
+		setupLog.Error(err, "unable to add pipelinesascode api to the scheme")
+		os.Exit(1)
+	}
 
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
 	// due to its vulnerabilities. More specifically, disabling http/2 will
@@ -118,6 +124,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&pacv1alpha1.Repository{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Repository")
+			os.Exit(1)
+		}
+	}
+
+	err = ctrl.NewWebhookManagedBy(mgr).
+		For(pacv1alpha1.Repository{}).
+		Complete()
+	
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -134,4 +151,11 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+// SetupWithManager sets up the controller with the Manager.
+func (r *pacv1alpha1.Repository) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).
+		For(r).
+		Complete()
 }

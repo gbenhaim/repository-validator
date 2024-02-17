@@ -22,7 +22,13 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	pacv1alpha1 "github.com/openshift-pipelines/pipelines-as-code/pkg/apis/pipelinesascode/v1alpha1"
 )
+
+type Repository struct {
+	*pacv1alpha1.Repository
+}
 
 // log is for logging in this package.
 var repositorylog = logf.Log.WithName("repository-resource")
@@ -44,6 +50,7 @@ var _ webhook.Validator = &Repository{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *Repository) ValidateCreate() (admission.Warnings, error) {
 	repositorylog.Info("validate create", "name", r.Name)
+	// r.Spec.URL
 
 	// TODO(user): fill in your validation logic upon object creation.
 	return nil, nil

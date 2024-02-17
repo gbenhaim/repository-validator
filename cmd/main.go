@@ -34,6 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	api "github.com/redhat-appstudio/repository-validator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -124,17 +126,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&pacv1alpha1.Repository{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Repository")
-			os.Exit(1)
-		}
-	}
-
-	err = ctrl.NewWebhookManagedBy(mgr).
-		For(pacv1alpha1.Repository{}).
-		Complete()
-	
+	err = (&api.Repository{}).SetupWebhookWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to add webhook to the manager")
+		os.Exit(1)
+	}	
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -151,11 +147,4 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *pacv1alpha1.Repository) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
 }

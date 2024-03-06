@@ -126,11 +126,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = (&api.Repository{}).SetupWebhookWithManager(mgr)
+	validator := api.RepositoryValidator{
+		UrlValidator: api.URLValidator{
+			URLPrefixAllowList: []string{"https://github.com"},
+		},
+		Logger: ctrl.Log.WithName("repository-resource"),
+	}
+	err = api.SetupWebhookWithManager(mgr, &validator)
 	if err != nil {
 		setupLog.Error(err, "unable to add webhook to the manager")
 		os.Exit(1)
-	}	
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

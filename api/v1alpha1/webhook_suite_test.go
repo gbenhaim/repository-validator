@@ -113,7 +113,13 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&Repository{}).SetupWebhookWithManager(mgr)
+	validator := RepositoryValidator{
+		UrlValidator: URLValidator{
+			URLPrefixAllowList: []string{"https://github.com"},
+		},
+		Logger: ctrl.Log.WithName("repository-resource"),
+	}
+	err = SetupWebhookWithManager(mgr, &validator)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:webhook

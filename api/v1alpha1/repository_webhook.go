@@ -33,6 +33,8 @@ import (
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-pipelinesascode-tekton-dev-appstudio-redhat-com-v1alpha1-repository,mutating=false,failurePolicy=fail,sideEffects=None,groups=pipelinesascode.tekton.dev.appstudio.redhat.com,resources=repositories,verbs=create;update,versions=v1alpha1,name=vrepository.kb.io,admissionReviewVersions=v1
 
+var AddToScheme = pacv1alpha1.AddToScheme
+
 type URLValidator struct {
 	URLPrefixAllowList []string
 }

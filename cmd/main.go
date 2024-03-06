@@ -73,7 +73,7 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	if err := api.AddToScheme(scheme); err != nil {
-		setupLog.Error(err, "unable to add pipelinesascode api to the scheme")
+		setupLog.Error(err, "Failed to setup the scheme")
 		os.Exit(1)
 	}
 

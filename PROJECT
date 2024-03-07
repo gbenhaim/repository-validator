@@ -8,7 +8,7 @@ layout:
 projectName: repository-validator
 repo: github.com/redhat-appstudio/repository-validator
 resources:
-- domain: appstudio.redhat.com
+- domain: "appstudio.redhat.com"
   group: pipelinesascode.tekton.dev
   kind: Repository
   path: github.com/redhat-appstudio/repository-validator/api/v1alpha1

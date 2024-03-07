@@ -10,12 +10,12 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-pipelinesascode-tekton-dev-appstudio-redhat-com-v1alpha1-repository
+      path: /validate-pipelinesascode-tekton-dev-v1alpha1-repository
   failurePolicy: Fail
   name: vrepository.kb.io
   rules:
   - apiGroups:
-    - pipelinesascode.tekton.dev.appstudio.redhat.com
+    - pipelinesascode.tekton.dev
     apiVersions:
     - v1alpha1
     operations:

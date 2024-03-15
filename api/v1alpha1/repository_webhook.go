@@ -66,7 +66,7 @@ func (u *URLValidator) Validate(url string) (admission.Warnings, error) {
 var _ webhook.CustomValidator = &RepositoryValidator{}
 
 type RepositoryValidator struct {
-	UrlValidator URLValidator
+	UrlValidator *URLValidator
 	Logger       logr.Logger
 }
 

@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"go/build"
 	"net"
 	"path/filepath"
 	"runtime"
@@ -50,6 +51,7 @@ var k8sClient client.Client
 var testEnv *envtest.Environment
 var ctx context.Context
 var cancel context.CancelFunc
+var urlValidator *URLValidator
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -64,8 +66,10 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: false,
+		CRDDirectoryPaths: []string{
+			filepath.Join(build.Default.GOPATH, "pkg", "mod", "github.com", "openshift-pipelines", "pipelines-as-code@v0.18.0", "config"),
+		},
+		ErrorIfCRDPathMissing: true,
 
 		// The BinaryAssetsDirectory is only required if you want to run the tests directly
 		// without call the makefile target test. If not informed it will look for the
@@ -113,11 +117,12 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
+	urlValidator = &URLValidator{
+		URLPrefixAllowList: []string{},
+	}
 	validator := RepositoryValidator{
-		UrlValidator: URLValidator{
-			URLPrefixAllowList: []string{"https://github.com"},
-		},
-		Logger: ctrl.Log.WithName("repository-resource"),
+		UrlValidator: urlValidator,
+		Logger:       ctrl.Log.WithName("repository-resource"),
 	}
 	err = SetupWebhookWithManager(mgr, &validator)
 	Expect(err).NotTo(HaveOccurred())

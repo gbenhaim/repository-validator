@@ -126,7 +126,7 @@ func main() {
 	}
 
 	validator := api.RepositoryValidator{
-		UrlValidator: api.URLValidator{
+		UrlValidator: &api.URLValidator{
 			URLPrefixAllowList: []string{"https://github.com"},
 		},
 		Logger: ctrl.Log.WithName("repository-resource"),

@@ -18,22 +18,54 @@ package v1alpha1
 
 import (
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	pacv1alpha1 "github.com/openshift-pipelines/pipelines-as-code/pkg/apis/pipelinesascode/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("Repository Webhook", func() {
 
-	Context("When creating Repository under Validating Webhook", func() {
-		It("Should deny if a required field is empty", func() {
+	var defaultNS string = "default"
+	var defaultRepoName string = "default-repo"
 
-			// TODO(user): Add your logic here
+	Context("Creating Repository under Validating Webhook", func() {
+		repository := &pacv1alpha1.Repository{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      defaultRepoName,
+				Namespace: defaultNS,
+			},
+			Spec: pacv1alpha1.RepositorySpec{
+				URL: "https://github.com/org/repo",
+			},
+		}
 
+		It("Should successfully create a repository", func() {
+			By("Having a prefix in the url allow list the matches the repository url", func() {
+				urlValidator.URLPrefixAllowList = []string{
+					"https://github.com/org",
+					"https//gitlab.com/org/group",
+				}
+			})
+			err := k8sClient.Create(ctx, repository)
+			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("Should admit if all required fields are provided", func() {
-
-			// TODO(user): Add your logic here
-
+		It("Should successfully delete a repository", func() {
+			err := k8sClient.Delete(ctx, repository)
+			Expect(err).ToNot(HaveOccurred())
 		})
+
+		It("Should fail to create a repository", func() {
+			By("Not having a prefix in the url allow list the matches the repository url", func() {
+				urlValidator.URLPrefixAllowList = []string{
+					"https://github.com/other-org",
+					"https//gitlab.com/org/group",
+				}
+			})
+			err := k8sClient.Create(ctx, repository)
+			Expect(err).To(HaveOccurred())
+		})
+
 	})
 
 })

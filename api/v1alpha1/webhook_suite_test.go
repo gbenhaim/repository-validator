@@ -122,7 +122,6 @@ var _ = BeforeSuite(func() {
 	}
 	validator := RepositoryValidator{
 		UrlValidator: urlValidator,
-		Logger:       ctrl.Log.WithName("repository-resource"),
 	}
 	err = SetupWebhookWithManager(mgr, &validator)
 	Expect(err).NotTo(HaveOccurred())

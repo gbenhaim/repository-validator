@@ -55,6 +55,7 @@ func main() {
 	var probeAddr string
 	var secureMetrics bool
 	var enableHTTP2 bool
+	var urlPrefixAllowListPath string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -64,6 +65,12 @@ func main() {
 		"If set the metrics endpoint is served securely")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
+	flag.StringVar(
+		&urlPrefixAllowListPath,
+		"url-prefix-allow-list",
+		"",
+		"A path to a JSON file that contains a list with prefixes of allowed repository urls",
+	)
 	opts := zap.Options{
 		Development: true,
 	}
@@ -125,11 +132,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	urlPrefixAllowList, err := api.LoadUrlPrefixAllowListFromFile(urlPrefixAllowListPath, os.ReadFile)
+	if err != nil {
+		setupLog.Error(err, "Failed to load url prefix allow list from file", "path", urlPrefixAllowList)
+		os.Exit(1)
+	}
+
 	validator := api.RepositoryValidator{
 		UrlValidator: &api.URLValidator{
-			URLPrefixAllowList: []string{"https://github.com"},
+			// todo load from config
+			URLPrefixAllowList: urlPrefixAllowList,
 		},
-		Logger: ctrl.Log.WithName("repository-resource"),
 	}
 	err = api.SetupWebhookWithManager(mgr, &validator)
 	if err != nil {

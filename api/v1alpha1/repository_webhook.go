@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -32,6 +33,8 @@ import (
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-pipelinesascode-tekton-dev-v1alpha1-repository,mutating=false,failurePolicy=fail,sideEffects=None,groups=pipelinesascode.tekton.dev,resources=repositories,verbs=create;update,versions=v1alpha1,name=vrepository.kb.io,admissionReviewVersions=v1
+
+var log logr.Logger = ctrl.Log.WithName("webhook")
 
 var AddToScheme = pacv1alpha1.AddToScheme
 
@@ -67,7 +70,6 @@ var _ webhook.CustomValidator = &RepositoryValidator{}
 
 type RepositoryValidator struct {
 	UrlValidator *URLValidator
-	Logger       logr.Logger
 }
 
 // ValidateCreate implements admission.CustomValidator.
@@ -75,7 +77,7 @@ func (r *RepositoryValidator) ValidateCreate(ctx context.Context, obj runtime.Ob
 	repo, ok := obj.(*pacv1alpha1.Repository)
 	if !ok {
 		gvk := obj.GetObjectKind().GroupVersionKind().String()
-		r.Logger.Info("Got $s, while expecting to get a Repository, skipping validation", gvk)
+		log.Info("Got $s, while expecting to get a Repository, skipping validation", gvk)
 		return nil, nil
 	}
 	return r.UrlValidator.Validate(repo.Spec.URL)
@@ -91,10 +93,35 @@ func (r *RepositoryValidator) ValidateUpdate(ctx context.Context, oldObj runtime
 	repo, ok := newObj.(*pacv1alpha1.Repository)
 	if !ok {
 		gvk := newObj.GetObjectKind().GroupVersionKind().String()
-		r.Logger.Info("Got $s, while expecting to get a Repository, skipping validation", gvk)
+		log.Info("Got $s, while expecting to get a Repository, skipping validation", gvk)
 		return nil, nil
 	}
 	return r.UrlValidator.Validate(repo.Spec.URL)
+}
+
+type FileReader func(name string) ([]byte, error)
+
+// Load the URL prefix' of allowed URLs from a file
+func LoadUrlPrefixAllowListFromFile(path string, fileReader FileReader) ([]string, error) {
+	if path == "" {
+		log.Info("URL prefix allow list config was not provided")
+		return []string{}, nil
+	}
+
+	content, err := fileReader(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var list []string
+	err = json.Unmarshal(content, &list)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info("Using URL prefix allow list", "config", list)
+
+	return list, nil
 }
 
 // SetupWebhookWithManager will setup the manager to manage the webhooks
